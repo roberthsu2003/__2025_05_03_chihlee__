@@ -17,3 +17,6 @@ https://youtube.com/live/ubAmIJHRqfk
 ### 2025_05_17_早上
 https://youtube.com/live/TD-aKNc1on0
 
+### 2025_05_17_下午
+https://youtube.com/live/CRB_ymO10ac
+
