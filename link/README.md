@@ -30,3 +30,8 @@ https://youtube.com/live/vdRyEXHGl0g
 
 ---
 
+### 2025_06_07_早上
+https://youtube.com/live/uj32e0eMqnw
+
+### 2025_06_07_下午
+https://youtube.com/live/UHfRyhXsQSE
