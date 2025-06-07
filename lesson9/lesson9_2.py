@@ -281,7 +281,7 @@ class NameSearchApp:
 
 
 if __name__ == "__main__":
-    names_file_path = "/Users/roberthsu2003/Documents/GitHub/__2025_05_03_chihlee__/lesson9/names.txt"
+    names_file_path = "names.txt"
     # 確保 names_file_path 是正確的
     if not os.path.exists(names_file_path):
         # 在主應用程式啟動前處理檔案不存在的情況
