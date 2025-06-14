@@ -35,3 +35,15 @@ https://youtube.com/live/uj32e0eMqnw
 
 ### 2025_06_07_下午
 https://youtube.com/live/UHfRyhXsQSE
+
+---
+
+### 2025_06_14_早上
+
+https://youtube.com/live/5FTG01CcnRg
+
+### 2025_06_14_下午
+
+https://youtube.com/live/T1uInJbtqXM
+
+---
