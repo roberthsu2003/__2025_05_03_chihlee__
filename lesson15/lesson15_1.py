@@ -117,6 +117,8 @@ def main():
     close_prices_df = create_close_price_dataframe()
     
     if close_prices_df is not None:
+        # 移除最後兩筆資料
+        close_prices_df = close_prices_df.iloc[:-2]
         print("\n==========================================")
         print("整合後的四支股票收盤價資料 (最新5筆):")
         print("==========================================")
