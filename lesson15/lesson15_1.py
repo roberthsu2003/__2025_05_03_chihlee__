@@ -1,4 +1,5 @@
 import yfinance as yf
+import pandas as pd
 from datetime import datetime
 import os
 
@@ -57,8 +58,69 @@ def download_data():
         except Exception as e:
             print(f"下載 {ticker} 時發生錯誤: {e}")
 
+def create_close_price_dataframe():
+    """
+    讀取 data 資料夾中的股票 CSV 檔，整合成一個包含所有收盤價的 DataFrame。
+
+    Returns:
+        pandas.DataFrame: 整合後的 DataFrame，索引為日期，欄位為股票中文名稱。
+                          如果找不到任何資料，則返回 None。
+    """
+    DATA_DIR = 'data'
+    STOCK_MAPPING = {
+        '2330': '台積電',
+        '2303': '聯電',
+        '2454': '聯發科',
+        '2317': '鴻海'
+    }
+
+    if not os.path.isdir(DATA_DIR):
+        print(f"錯誤：資料夾 '{DATA_DIR}' 不存在。請先執行 download_data()。")
+        return None
+
+    all_dataframes = []
+    
+    try:
+        files_in_data = os.listdir(DATA_DIR)
+    except FileNotFoundError:
+        print(f"錯誤：資料夾 '{DATA_DIR}' 不存在。")
+        return None
+
+    for code, name in STOCK_MAPPING.items():
+        # 使用 next 和生成器表達式來尋找檔案，更簡潔
+        stock_file = next((f for f in files_in_data if f.startswith(f"{code}_") and f.endswith(".csv")), None)
+        
+        if stock_file:
+            filepath = os.path.join(DATA_DIR, stock_file)
+            try:
+                # 修正：讀取時將第一欄作為 index，並解析為日期
+                df = pd.read_csv(filepath, index_col=0, parse_dates=True)
+                # 只保留 Close 欄位，並重新命名
+                df = df[['Close']].rename(columns={'Close': name})
+                all_dataframes.append(df)
+            except Exception as e:
+                print(f"處理檔案 {filepath} 時發生錯誤: {e}")
+        else:
+            print(f"警告：在 '{DATA_DIR}' 中找不到股票代碼 {code} 的資料檔。")
+
+    if not all_dataframes:
+        print("沒有成功讀取任何股票資料，無法建立 DataFrame。")
+        return None
+
+    # 合併所有 DataFrame
+    final_df = pd.concat(all_dataframes, axis=1)
+    final_df.sort_index(inplace=True)
+    return final_df
+
 def main():
     download_data()
+    close_prices_df = create_close_price_dataframe()
+    
+    if close_prices_df is not None:
+        print("\n==========================================")
+        print("整合後的四支股票收盤價資料 (最新5筆):")
+        print("==========================================")
+        print(close_prices_df.tail())
 
 if __name__ == '__main__':
     main()
