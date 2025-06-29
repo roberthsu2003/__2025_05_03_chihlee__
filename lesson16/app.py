@@ -48,12 +48,21 @@ def load_adjclose_dataframe():
     return result_df
 
 # --- Streamlit App Start ---
-download_tw_stocks()
-df = load_adjclose_dataframe()
+# 初始化 session_state
+if 'start_date_selected' not in st.session_state:
+    st.session_state.start_date_selected = None
+if 'end_date_selected' not in st.session_state:
+    st.session_state.end_date_selected = None
+
+with st.spinner('正在下載最新的股票資料...'):
+    download_tw_stocks()
+with st.spinner('正在載入股票資料...'):
+    df = load_adjclose_dataframe()
 
 st.title("台股歷史股價視覺化")
+st.write("本應用程式提供台股歷史股價查詢與視覺化功能。請選擇您感興趣的股票及日期區間，即可查看股價走勢圖與詳細數據。")
 
-options = list(df.columns)
+options = sorted(list(df.columns))
 default = [name for name in options if "台積電" in name]
 selected = st.multiselect(
     "請選擇股票（可複選）",
@@ -65,17 +74,56 @@ if not df.empty:
     if not pd.api.types.is_datetime64_any_dtype(df.index):
         df.index = pd.to_datetime(df.index, errors='coerce')
         df = df[~df.index.isna()]
+
+    today = pd.to_datetime('today').date()
+
+    # 預設日期區間
     last_7_dates = df.index[-7:]
     start_default = last_7_dates[0].date()
     end_default = last_7_dates[-1].date()
-    start_date = st.date_input("開始時間", value=start_default, min_value=df.index[0].date(), max_value=df.index[-1].date())
-    end_date = st.date_input("結束時間", value=end_default, min_value=df.index[0].date(), max_value=df.index[-1].date())
+
+    # 如果 session_state 中的日期為 None，則設定為預設值
+    if st.session_state.start_date_selected is None:
+        st.session_state.start_date_selected = start_default
+    if st.session_state.end_date_selected is None:
+        st.session_state.end_date_selected = end_default
+
+    # 快速選擇按鈕
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button('近一週'):
+            st.session_state.start_date_selected = max((pd.Timestamp(today) - pd.Timedelta(weeks=1)).date(), df.index[0].date())
+            st.session_state.end_date_selected = min(today, df.index[-1].date())
+    with col2:
+        if st.button('近一月'):
+            st.session_state.start_date_selected = max((pd.Timestamp(today) - pd.Timedelta(days=30)).date(), df.index[0].date())
+            st.session_state.end_date_selected = min(today, df.index[-1].date())
+    with col3:
+        if st.button('近三月'):
+            st.session_state.start_date_selected = max((pd.Timestamp(today) - pd.Timedelta(days=90)).date(), df.index[0].date())
+            st.session_state.end_date_selected = min(today, df.index[-1].date())
+    with col4:
+        if st.button('今年以來'):
+            st.session_state.start_date_selected = max(pd.to_datetime(f'{today.year}-01-01').date(), df.index[0].date())
+            st.session_state.end_date_selected = min(today, df.index[-1].date())
+
+    # 日期選擇器
+    start_date_input = st.date_input("開始時間", value=st.session_state.start_date_selected, min_value=df.index[0].date(), max_value=df.index[-1].date())
+    end_date_input = st.date_input("結束時間", value=st.session_state.end_date_selected, min_value=df.index[0].date(), max_value=df.index[-1].date())
+
+    # 更新 session_state 中的日期
+    if start_date_input != st.session_state.start_date_selected:
+        st.session_state.start_date_selected = start_date_input
+    if end_date_input != st.session_state.end_date_selected:
+        st.session_state.end_date_selected = end_date_input
+
 else:
     st.warning("資料為空，無法選擇日期。")
-    start_date = end_date = None
+    st.session_state.start_date_selected = None
+    st.session_state.end_date_selected = None
 
-if selected and start_date and end_date:
-    mask = (df.index.date >= start_date) & (df.index.date <= end_date)
+if selected and st.session_state.start_date_selected and st.session_state.end_date_selected:
+    mask = (df.index.date >= st.session_state.start_date_selected) & (df.index.date <= st.session_state.end_date_selected)
     filtered_df = df.loc[mask, selected]
     filtered_df = filtered_df.apply(pd.to_numeric, errors='coerce')
     filtered_df = filtered_df.dropna(axis=0, how='all').dropna(axis=1, how='all')
@@ -100,6 +148,8 @@ if selected and start_date and end_date:
                 showlegend=False
             )
             st.plotly_chart(fig, use_container_width=True)
+        st.subheader("篩選後的股價資料")
+        st.dataframe(filtered_df.round(2))
     else:
         st.info("所選區間內無可用數值資料")
 else:
